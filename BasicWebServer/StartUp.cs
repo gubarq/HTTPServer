@@ -2,6 +2,8 @@
 using BasicWebServer.Server.HTTP;
 using BasicWebServer.Server.Responses;
 using BasicWebServer.Server.Routing;
+using System.Text;
+using System.Web;
 
 namespace BasicWebServer.Demo
 {
@@ -27,6 +29,36 @@ namespace BasicWebServer.Demo
             {
                 response.Body += $"{key} - {value}";
                 response.Body += Environment.NewLine;
+            }
+        }
+        private static void AddCookiesAction(Request request, Response response)
+        {
+            var requestHasCookies = request.Cookies.Any();
+            var bodyText = "";
+            if (requestHasCookies)
+            {
+                var cookiesText = new StringBuilder();
+                cookiesText.AppendLine("<h1>Cookies</h1>");
+                cookiesText.Append("<table border='1'<tr><th>Name</th><th>Value</th></tr>>");
+                foreach (var cookie in request.Cookies)
+                {
+                    cookiesText.Append("<tr>");
+                    cookiesText.Append($"<td>{HttpUtility.HtmlEncode(cookie.Name)}</td>");
+                    cookiesText.Append($"<td>{HttpUtility.HtmlEncode(cookie.Value)}</td>");
+                    cookiesText.Append("</tr>");
+
+                }
+                cookiesText.Append("</table>");
+                bodyText = cookiesText.ToString();
+            }
+            else
+            {
+                bodyText = "<h1> Cookies set! </h1>";
+            }
+            if (!requestHasCookies)
+            {
+                response.Cookies.Add("My-Cookie", "My-Value");
+                response.Cookies.Add("My-Second-Cookie", "My-Second-Value");
             }
         }
         private static async Task<string> DownloadWebSiteContent(string url)
@@ -62,7 +94,8 @@ namespace BasicWebServer.Demo
             .MapGet("/HTML", new HtmlResponse(HtmlForm))
             .MapPost("/HTML", new TextResponse("", StartUp.AddFormDataAction))
             .MapGet("/Content", new HtmlResponse(StartUp.DownloadForm))
-            .MapPost("/Content", new TextFileResponse(StartUp.FileName)));
+            .MapPost("/Content", new TextFileResponse(StartUp.FileName))
+            .MapGet("/Cookies", new HtmlResponse("", StartUp.AddCookiesAction)));
             
             await server.Start();
         }

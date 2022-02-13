@@ -10,6 +10,8 @@ namespace BasicWebServer.Server.HTTP
 
         public HeaderCollection Headers { get; private set; }
 
+        public CookieCollection Cookies { get; private set; }
+
         public string Body { get; private set; }
 
         public IReadOnlyDictionary<string, string> Form { get; set; }
@@ -25,6 +27,8 @@ namespace BasicWebServer.Server.HTTP
 
             var headers = ParseHeaders(lines.Skip(1));
 
+            var cookies = ParseCookies(headers);
+
             var bodyLines = lines.Skip(headers.Count + 2).ToArray();
 
             var body = string.Join("\r\n", bodyLines);
@@ -36,6 +40,7 @@ namespace BasicWebServer.Server.HTTP
                 Method = method,
                 Url = url,
                 Headers = headers,
+                Cookies = cookies,
                 Body = body,
                 Form = form
             };
@@ -101,6 +106,23 @@ namespace BasicWebServer.Server.HTTP
             }
 
             return headerCollection;
+        }
+        private static CookieCollection ParseCookies(HeaderCollection headers)
+        {
+            var cookiesCollection = new CookieCollection();
+            if (headers.Contains(Header.Cookie))
+            {
+                var cookieHeader = headers[Header.Cookie];
+                var allCookies = cookieHeader.Split(';');
+                foreach (var cookie in allCookies)
+                {
+                    var cookieParts = cookie.Split('=');
+                    var cookieName = cookieParts[0].Trim();
+                    var cookieValue = cookieParts[1].Trim();
+                    cookiesCollection.Add(cookieName, cookieValue);
+                };
+            }
+            return cookiesCollection;
         }
     }
 }
