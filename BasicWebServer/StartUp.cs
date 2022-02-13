@@ -31,9 +31,26 @@ namespace BasicWebServer.Demo
                 response.Body += Environment.NewLine;
             }
         }
+        private static void DisplaySessionInfoAction(Request request, Response response)
+        {
+            var sessionExists = request.Session
+                .ContainsKey(Session.SessionCurrentDateKey);
+            var bodyText = "";
+            if(sessionExists)
+            {
+                var currentDate = request.Session[Session.SessionCurrentDateKey];
+                bodyText = $"Stored date: {currentDate}!";
+            }
+            else
+            {
+                bodyText = "Current date stored!";
+            }
+            response.Body = "";
+            response.Body += bodyText;
+        }
         private static void AddCookiesAction(Request request, Response response)
         {
-            var requestHasCookies = request.Cookies.Any();
+            var requestHasCookies = request.Cookies.Any(c=>c.Name != Session.SessionCookieName);
             var bodyText = "";
             if (requestHasCookies)
             {
@@ -95,7 +112,8 @@ namespace BasicWebServer.Demo
             .MapPost("/HTML", new TextResponse("", StartUp.AddFormDataAction))
             .MapGet("/Content", new HtmlResponse(StartUp.DownloadForm))
             .MapPost("/Content", new TextFileResponse(StartUp.FileName))
-            .MapGet("/Cookies", new HtmlResponse("", StartUp.AddCookiesAction)));
+            .MapGet("/Cookies", new HtmlResponse("", StartUp.AddCookiesAction))
+            .MapGet("/Session", new TextResponse("", StartUp.DisplaySessionInfoAction)));
             
             await server.Start();
         }
